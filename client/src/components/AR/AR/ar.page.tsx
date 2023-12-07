@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { coordinatesAtom, userAtom } from 'src/atoms/user';
 import { Loading } from 'src/components/Loading/Loading';
 import { apiClient } from 'src/utils/apiClient';
+import { xValue, yValue, zValue } from 'src/utils/calculate';
 import { formatContent, formatTime } from 'src/utils/format';
 import { returnNull } from 'src/utils/returnNull';
 import styles from './ar.module.css';
@@ -35,7 +36,6 @@ const ARComponent = () => {
     const longitude = coordinates.longitude;
     const data = await apiClient.posts.$get({ query: { latitude, longitude } }).catch(returnNull);
     setPosts(data);
-    // console.log('getPosts');
   }, [coordinates.latitude, coordinates.longitude]);
 
   useEffect(() => {
@@ -172,32 +172,6 @@ const ARComponent = () => {
     // }
   }, [deletePostContent, handleLike]);
 
-  const radius = 5;
-  const numPosts = posts?.length;
-  // X座標を計算する関数
-  const xValue = (index: number) => {
-    if (numPosts === undefined) return 0;
-    const angle = (index / numPosts) * Math.PI * 2;
-    return -radius * Math.cos(angle);
-    // return 0;
-  };
-
-  // Y座標を計算する関数（例では一定の高さを返します）
-  const yValue = () => {
-    // if (numPosts === undefined) return;
-    // const angle = Math.PI * 2;
-    // return -radius * Math.cos(angle);
-    return 0; // 高さは1に固定
-  };
-
-  // Z座標を計算する関数
-  const zValue = (index: number) => {
-    if (numPosts === undefined) return 0;
-    const angle = (index / numPosts) * Math.PI * 2;
-    return -radius * Math.sin(angle);
-    // return 0;
-  };
-
   if (!user) {
     return (
       <div>
@@ -225,7 +199,7 @@ const ARComponent = () => {
           <a-entity
             key={index}
             id={`post${index}`}
-            position={`${xValue(index)} ${yValue()} ${zValue(index)}`}
+            position={`${xValue(index, posts.length)} ${yValue()} ${zValue(index, posts.length)}`}
             // position={`0 0.5 -5`}
             rotation={`0 0 0`}
             look-at="[camera]"
