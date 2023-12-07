@@ -17,7 +17,6 @@ const ARComponent = () => {
   const [posts, setPosts] = useState<PostModel[] | null>(null);
   const [likesStatus, setLikesStatus] = useState<{ [key: string]: boolean }>({});
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-
   const router = useRouter();
 
   useEffect(() => {
