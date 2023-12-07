@@ -14,6 +14,9 @@ const ARComponent = () => {
   const [user, setUser] = useAtom(userAtom);
   const [coordinates, setCoordinates] = useAtom(coordinatesAtom);
   const [posts, setPosts] = useState<PostModel[] | null>(null);
+  const [likesStatus, setLikesStatus] = useState<{ [key: string]: boolean }>({});
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -46,8 +49,6 @@ const ARComponent = () => {
     }
   }, [setCoordinates]);
 
-  const [likesStatus, setLikesStatus] = useState<{ [key: string]: boolean }>({});
-
   const isLikeChecker = useCallback(
     async (postId: string) => {
       if (user === null) return;
@@ -68,8 +69,6 @@ const ARComponent = () => {
     [isLikeChecker]
   );
 
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
-
   useEffect(() => {
     if (isFirstLoad && coordinates.latitude !== null && coordinates.longitude !== null) {
       const oneRendaringGetPosts = async () => {
@@ -89,39 +88,44 @@ const ARComponent = () => {
     }
   }, [coordinates.latitude, coordinates.longitude, updateLikesStatus, isFirstLoad]);
 
-  window.handleLike = async (postId: string) => {
-    if (user?.id === undefined || postId === undefined) return;
+  const handleLike = useCallback(
+    async (postId: string) => {
+      if (user?.id === undefined || postId === undefined) return;
 
-    const result = await apiClient.likes.$patch({
-      body: { postId, userId: user.id },
-    });
-
-    setLikesStatus((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
-    setPosts((prevPosts) => {
-      if (!prevPosts) return prevPosts;
-
-      return prevPosts.map((post) => {
-        if (post.id === postId) {
-          // 更新されたlikeCountを持つ投稿を返す
-          return { ...post, likeCount: result };
-        } else {
-          // 他の投稿はそのまま返す
-          return post;
-        }
+      const result = await apiClient.likes.$patch({
+        body: { postId, userId: user.id },
       });
-    });
-  };
 
-  window.deletePostContent = async (postID: string) => {
-    // console.log('postID', postID);
-    await apiClient.likes.$delete({ body: { postId: postID } }).catch(returnNull);
-    await apiClient.myPost.$delete({ query: { postID } }).catch(returnNull);
+      setLikesStatus((prev) => ({
+        ...prev,
+        [postId]: !prev[postId],
+      }));
+      setPosts((prevPosts) => {
+        if (!prevPosts) return prevPosts;
 
-    await getPosts();
-  };
+        return prevPosts.map((post) => {
+          if (post.id === postId) {
+            // 更新されたlikeCountを持つ投稿を返す
+            return { ...post, likeCount: result };
+          } else {
+            // 他の投稿はそのまま返す
+            return post;
+          }
+        });
+      });
+    },
+    [user?.id]
+  );
+
+  const deletePostContent = useCallback(
+    async (postID: string) => {
+      await apiClient.likes.$delete({ body: { postId: postID } }).catch(returnNull);
+      await apiClient.myPost.$delete({ query: { postID } }).catch(returnNull);
+
+      await getPosts();
+    },
+    [getPosts]
+  );
 
   useEffect(() => {
     if (typeof AFRAME.components['likes'] === 'undefined') {
@@ -134,7 +138,7 @@ const ARComponent = () => {
             // alert('clickしました');
             const postId = this.data.postId;
             // console.log('postID', postId);
-            window.handleLike(postId);
+            handleLike(postId);
           });
         },
       });
@@ -150,7 +154,7 @@ const ARComponent = () => {
             // alert('clickしました');
             const postId = this.data.postId;
             // console.log('postID', postId);
-            if (confirm('削除しますか？')) window.deletePostContent(postId);
+            if (confirm('削除しますか？')) deletePostContent(postId);
           });
         },
       });
@@ -166,7 +170,7 @@ const ARComponent = () => {
     //     },
     //   });
     // }
-  }, []);
+  }, [deletePostContent, handleLike]);
 
   const radius = 5;
   const numPosts = posts?.length;
