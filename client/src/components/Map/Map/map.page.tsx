@@ -7,6 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SendIcon from '@mui/icons-material/Send';
 import { Button, TextField } from '@mui/material';
 import Fab from '@mui/material/Fab';
+import type { PostModel } from 'commonTypesWithClient/models';
 import { useAtom } from 'jotai';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -61,6 +62,7 @@ const Map: FC = () => {
   // console.log('my', myIconURL);
   const [user, setUser] = useAtom(userAtom);
   const [coordinates, setCoordinates] = useAtom(coordinatesAtom);
+  const [posts, setPosts] = useState<PostModel[] | null>(null);
 
   const router = useRouter();
 
@@ -91,19 +93,6 @@ const Map: FC = () => {
   const handleClosePopup = () => {
     setIsPopupVisible(false);
   };
-  const [posts, setPosts] = useState<
-    | {
-        id: string;
-        userName: string;
-        postTime: string;
-        content: string;
-        latitude: number;
-        longitude: number;
-        userID: string;
-        likeCount: number;
-      }[]
-    | null
-  >(null);
 
   //24時間以内かつ半径10km以内のものをget! useEffectで呼び出される、、
   const getPosts = useCallback(async () => {
