@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { coordinatesAtom, userAtom } from 'src/atoms/user';
 import { Loading } from 'src/components/Loading/Loading';
 import { apiClient } from 'src/utils/apiClient';
+import { xValue, yValue, zValue } from 'src/utils/calculate';
 import { formatContent, formatTime } from 'src/utils/format';
 import { returnNull } from 'src/utils/returnNull';
 import styles from './ar.module.css';
@@ -14,6 +15,8 @@ const ARComponent = () => {
   const [user, setUser] = useAtom(userAtom);
   const [coordinates, setCoordinates] = useAtom(coordinatesAtom);
   const [posts, setPosts] = useState<PostModel[] | null>(null);
+  const [likesStatus, setLikesStatus] = useState<{ [key: string]: boolean }>({});
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,7 +35,6 @@ const ARComponent = () => {
     const longitude = coordinates.longitude;
     const data = await apiClient.posts.$get({ query: { latitude, longitude } }).catch(returnNull);
     setPosts(data);
-    // console.log('getPosts');
   }, [coordinates.latitude, coordinates.longitude]);
 
   useEffect(() => {
@@ -45,8 +47,6 @@ const ARComponent = () => {
       });
     }
   }, [setCoordinates]);
-
-  const [likesStatus, setLikesStatus] = useState<{ [key: string]: boolean }>({});
 
   const isLikeChecker = useCallback(
     async (postId: string) => {
@@ -68,8 +68,6 @@ const ARComponent = () => {
     [isLikeChecker]
   );
 
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
-
   useEffect(() => {
     if (isFirstLoad && coordinates.latitude !== null && coordinates.longitude !== null) {
       const oneRendaringGetPosts = async () => {
@@ -89,39 +87,44 @@ const ARComponent = () => {
     }
   }, [coordinates.latitude, coordinates.longitude, updateLikesStatus, isFirstLoad]);
 
-  window.handleLike = async (postId: string) => {
-    if (user?.id === undefined || postId === undefined) return;
+  const handleLike = useCallback(
+    async (postId: string) => {
+      if (user?.id === undefined || postId === undefined) return;
 
-    const result = await apiClient.likes.$patch({
-      body: { postId, userId: user.id },
-    });
-
-    setLikesStatus((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
-    setPosts((prevPosts) => {
-      if (!prevPosts) return prevPosts;
-
-      return prevPosts.map((post) => {
-        if (post.id === postId) {
-          // 更新されたlikeCountを持つ投稿を返す
-          return { ...post, likeCount: result };
-        } else {
-          // 他の投稿はそのまま返す
-          return post;
-        }
+      const result = await apiClient.likes.$patch({
+        body: { postId, userId: user.id },
       });
-    });
-  };
 
-  window.deletePostContent = async (postID: string) => {
-    // console.log('postID', postID);
-    await apiClient.likes.$delete({ body: { postId: postID } }).catch(returnNull);
-    await apiClient.myPost.$delete({ query: { postID } }).catch(returnNull);
+      setLikesStatus((prev) => ({
+        ...prev,
+        [postId]: !prev[postId],
+      }));
+      setPosts((prevPosts) => {
+        if (!prevPosts) return prevPosts;
 
-    await getPosts();
-  };
+        return prevPosts.map((post) => {
+          if (post.id === postId) {
+            // 更新されたlikeCountを持つ投稿を返す
+            return { ...post, likeCount: result };
+          } else {
+            // 他の投稿はそのまま返す
+            return post;
+          }
+        });
+      });
+    },
+    [user?.id]
+  );
+
+  const deletePostContent = useCallback(
+    async (postID: string) => {
+      await apiClient.likes.$delete({ body: { postId: postID } }).catch(returnNull);
+      await apiClient.myPost.$delete({ query: { postID } }).catch(returnNull);
+
+      await getPosts();
+    },
+    [getPosts]
+  );
 
   useEffect(() => {
     if (typeof AFRAME.components['likes'] === 'undefined') {
@@ -134,7 +137,7 @@ const ARComponent = () => {
             // alert('clickしました');
             const postId = this.data.postId;
             // console.log('postID', postId);
-            window.handleLike(postId);
+            handleLike(postId);
           });
         },
       });
@@ -150,7 +153,7 @@ const ARComponent = () => {
             // alert('clickしました');
             const postId = this.data.postId;
             // console.log('postID', postId);
-            if (confirm('削除しますか？')) window.deletePostContent(postId);
+            if (confirm('削除しますか？')) deletePostContent(postId);
           });
         },
       });
@@ -166,33 +169,7 @@ const ARComponent = () => {
     //     },
     //   });
     // }
-  }, []);
-
-  const radius = 5;
-  const numPosts = posts?.length;
-  // X座標を計算する関数
-  const xValue = (index: number) => {
-    if (numPosts === undefined) return 0;
-    const angle = (index / numPosts) * Math.PI * 2;
-    return -radius * Math.cos(angle);
-    // return 0;
-  };
-
-  // Y座標を計算する関数（例では一定の高さを返します）
-  const yValue = () => {
-    // if (numPosts === undefined) return;
-    // const angle = Math.PI * 2;
-    // return -radius * Math.cos(angle);
-    return 0; // 高さは1に固定
-  };
-
-  // Z座標を計算する関数
-  const zValue = (index: number) => {
-    if (numPosts === undefined) return 0;
-    const angle = (index / numPosts) * Math.PI * 2;
-    return -radius * Math.sin(angle);
-    // return 0;
-  };
+  }, [deletePostContent, handleLike]);
 
   if (!user) {
     return (
@@ -221,7 +198,7 @@ const ARComponent = () => {
           <a-entity
             key={index}
             id={`post${index}`}
-            position={`${xValue(index)} ${yValue()} ${zValue(index)}`}
+            position={`${xValue(index, posts.length)} ${yValue()} ${zValue(index, posts.length)}`}
             // position={`0 0.5 -5`}
             rotation={`0 0 0`}
             look-at="[camera]"

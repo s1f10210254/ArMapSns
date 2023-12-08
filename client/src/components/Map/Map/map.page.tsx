@@ -7,6 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SendIcon from '@mui/icons-material/Send';
 import { Button, TextField } from '@mui/material';
 import Fab from '@mui/material/Fab';
+import type { PostModel } from 'commonTypesWithClient/models';
 import { useAtom } from 'jotai';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -61,6 +62,10 @@ const Map: FC = () => {
   // console.log('my', myIconURL);
   const [user, setUser] = useAtom(userAtom);
   const [coordinates, setCoordinates] = useAtom(coordinatesAtom);
+  const [posts, setPosts] = useState<PostModel[] | null>(null);
+  const [postContent, setPostContent] = useState('');
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   const router = useRouter();
 
@@ -84,26 +89,12 @@ const Map: FC = () => {
       });
     }
   }, [setCoordinates]);
-  const [isPopupVisible, setIsPopupVisible] = useState(false);
   const handleButtonClick = () => {
     setIsPopupVisible(true);
   };
   const handleClosePopup = () => {
     setIsPopupVisible(false);
   };
-  const [posts, setPosts] = useState<
-    | {
-        id: string;
-        userName: string;
-        postTime: string;
-        content: string;
-        latitude: number;
-        longitude: number;
-        userID: string;
-        likeCount: number;
-      }[]
-    | null
-  >(null);
 
   //24時間以内かつ半径10km以内のものをget! useEffectで呼び出される、、
   const getPosts = useCallback(async () => {
@@ -115,7 +106,6 @@ const Map: FC = () => {
     // console.log('getPosts');
   }, [coordinates.latitude, coordinates.longitude]);
 
-  const [postContent, setPostContent] = useState('');
   const postPostContent = async () => {
     if (user?.id === undefined || postContent === '') return;
     if (coordinates.latitude === null || coordinates.longitude === null) return;
@@ -164,7 +154,6 @@ const Map: FC = () => {
     });
   };
 
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
   useEffect(() => {
     if (isFirstLoad && coordinates.latitude !== null && coordinates.longitude !== null) {
       const oneRendaringGetPosts = async () => {
