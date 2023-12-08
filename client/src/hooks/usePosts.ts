@@ -1,26 +1,29 @@
 import type { PostModel } from 'commonTypesWithClient/models';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from 'src/utils/apiClient';
 import type { GeolocationCoordinates } from 'src/utils/interface';
 import { returnNull } from 'src/utils/returnNull';
-
-const usePosts = (coordinates: GeolocationCoordinates) => {
+type updateLikeStatusFunction = (posts: PostModel[]) => Promise<void>;
+const usePosts = (
+  coordinates: GeolocationCoordinates,
+  updateLikeStatus: updateLikeStatusFunction
+) => {
   const [posts, setPosts] = useState<PostModel[] | null>(null);
 
+  const fetchAndUpdatePosts = useCallback(async () => {
+    if (coordinates.latitude === null || coordinates.longitude === null) return;
+    const data = await apiClient.posts
+      .$get({ query: { latitude: coordinates.latitude, longitude: coordinates.longitude } })
+      .catch(returnNull);
+    setPosts(data);
+    if (data) await updateLikeStatus(data);
+  }, [coordinates, updateLikeStatus]);
+
   useEffect(() => {
-    const fetchPosts = async () => {
-      if (coordinates.latitude === null || coordinates.longitude === null) return;
-      const data = await apiClient.posts
-        .$get({ query: { latitude: coordinates.latitude, longitude: coordinates.longitude } })
-        .catch(returnNull);
+    fetchAndUpdatePosts();
+  }, [fetchAndUpdatePosts]);
 
-      setPosts(data);
-    };
-
-    fetchPosts();
-  }, [coordinates.latitude, coordinates.longitude]);
-
-  return posts;
+  return [posts, fetchAndUpdatePosts];
 };
 
 export default usePosts;
