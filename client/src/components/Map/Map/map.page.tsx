@@ -63,6 +63,9 @@ const Map: FC = () => {
   const [user, setUser] = useAtom(userAtom);
   const [coordinates, setCoordinates] = useAtom(coordinatesAtom);
   const [posts, setPosts] = useState<PostModel[] | null>(null);
+  const [postContent, setPostContent] = useState('');
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   const router = useRouter();
 
@@ -86,7 +89,6 @@ const Map: FC = () => {
       });
     }
   }, [setCoordinates]);
-  const [isPopupVisible, setIsPopupVisible] = useState(false);
   const handleButtonClick = () => {
     setIsPopupVisible(true);
   };
@@ -104,7 +106,6 @@ const Map: FC = () => {
     // console.log('getPosts');
   }, [coordinates.latitude, coordinates.longitude]);
 
-  const [postContent, setPostContent] = useState('');
   const postPostContent = async () => {
     if (user?.id === undefined || postContent === '') return;
     if (coordinates.latitude === null || coordinates.longitude === null) return;
@@ -153,7 +154,6 @@ const Map: FC = () => {
     });
   };
 
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
   useEffect(() => {
     if (isFirstLoad && coordinates.latitude !== null && coordinates.longitude !== null) {
       const oneRendaringGetPosts = async () => {
