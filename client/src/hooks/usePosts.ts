@@ -1,34 +1,78 @@
-import type { PostModel } from 'commonTypesWithClient/models';
-import { useCallback, useEffect, useState } from 'react';
+import type { PostModel, UserModel } from 'commonTypesWithClient/models';
+import { useCallback, useState } from 'react';
 import { apiClient } from 'src/utils/apiClient';
 import type { GeolocationCoordinates } from 'src/utils/interface';
 import { returnNull } from 'src/utils/returnNull';
-type UpdateLikesStatusFunction = (data: PostModel[]) => Promise<void>;
-const usePosts = (
-  coordinates: GeolocationCoordinates,
-  isFirstLoad: boolean,
-  updateLikesStatus: UpdateLikesStatusFunction,
-  setIsFirstLoad: (value: boolean) => void
-) => {
+import useLocation from './useLocation';
+
+const usePosts = (user: UserModel) => {
   const [posts, setPosts] = useState<PostModel[] | null>(null);
-  const fetchPosts = useCallback(async () => {
+  const [likesStatus, setLikesStatus] = useState<{ [key: string]: boolean }>({});
+
+  const coordinates = useLocation();
+  const getPosts = useCallback(async (coordinates: GeolocationCoordinates) => {
     if (coordinates.latitude === null || coordinates.longitude === null) return;
-    const data = await apiClient.posts
-      .$get({ query: { latitude: coordinates.latitude, longitude: coordinates.longitude } })
-      .catch(returnNull);
+    const { latitude, longitude } = coordinates;
+    const data = await apiClient.posts.$get({ query: { latitude, longitude } }).catch(returnNull);
     setPosts(data);
+  }, []);
 
-    if (isFirstLoad && data) {
-      await updateLikesStatus(data);
-      setIsFirstLoad(false);
+  const isLikeChecker = useCallback(
+    async (postId: string) => {
+      if (user === null) return;
+      const isLike = await apiClient.likes.$get({ query: { postId, userId: user.id } });
+      return isLike;
+    },
+    [user]
+  );
+
+  const updateLikesStatus = useCallback(async () => {
+    if (!posts) return;
+    const status: { [key: string]: boolean } = {};
+    for (const post of posts) {
+      const isLiked = await isLikeChecker(post.id);
+      status[post.id] = isLiked !== undefined ? isLiked : false;
     }
-  }, [coordinates, isFirstLoad, updateLikesStatus, setIsFirstLoad]);
+    setLikesStatus(status);
+  }, [posts, isLikeChecker]);
 
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+  const handleLike = useCallback(
+    async (postId: string) => {
+      if (user?.id === undefined || postId === undefined) return;
 
-  return posts;
+      const result = await apiClient.likes.$patch({
+        body: { postId, userId: user.id },
+      });
+
+      setLikesStatus((prev) => ({
+        ...prev,
+        [postId]: !prev[postId],
+      }));
+      setPosts((prevPosts) => {
+        if (!prevPosts) return prevPosts;
+
+        return prevPosts.map((post) => {
+          if (post.id === postId) {
+            return { ...post, likeCount: result };
+          } else {
+            return post;
+          }
+        });
+      });
+    },
+    [user?.id]
+  );
+
+  const deletePostContent = useCallback(
+    async (postID: string) => {
+      await apiClient.likes.$delete({ body: { postId: postID } }).catch(returnNull);
+      await apiClient.myPost.$delete({ query: { postID } }).catch(returnNull);
+
+      await getPosts(coordinates);
+    },
+    [getPosts, coordinates]
+  );
+
+  return { posts, likesStatus, getPosts, updateLikesStatus, handleLike, deletePostContent };
 };
-
 export default usePosts;
