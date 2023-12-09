@@ -67,25 +67,16 @@ const ARComponent = () => {
     },
     [isLikeChecker]
   );
-
   useEffect(() => {
     if (isFirstLoad && coordinates.latitude !== null && coordinates.longitude !== null) {
-      const oneRendaringGetPosts = async () => {
-        const latitude = coordinates.latitude as number;
-        const longitude = coordinates.longitude as number;
-        const data = await apiClient.posts
-          .$get({ query: { latitude, longitude } })
-          .catch(returnNull);
-        setPosts(data);
-        if (data) {
-          await updateLikesStatus(data);
+      getPosts().then(() => {
+        if (posts) {
+          updateLikesStatus(posts);
+          setIsFirstLoad(false);
         }
-      };
-
-      oneRendaringGetPosts();
-      setIsFirstLoad(false); // 最初のロードが完了したらフラグを更新
+      });
     }
-  }, [coordinates.latitude, coordinates.longitude, updateLikesStatus, isFirstLoad]);
+  }, [isFirstLoad, coordinates, getPosts, posts, updateLikesStatus]);
 
   const handleLike = useCallback(
     async (postId: string) => {
