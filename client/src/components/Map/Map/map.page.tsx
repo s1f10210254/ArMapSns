@@ -8,18 +8,17 @@ import SendIcon from '@mui/icons-material/Send';
 import { Button, TextField } from '@mui/material';
 import Fab from '@mui/material/Fab';
 import type { PostModel } from 'commonTypesWithClient/models';
-import { useAtom } from 'jotai';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useRouter } from 'next/router';
 import myIconURL from 'public/images/me.png';
 import otherIconURL from 'public/images/other.png';
 import pingIconURL from 'public/images/pinn.png';
 import type { FC } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
-import { coordinatesAtom, userAtom } from 'src/atoms/user';
 import { Loading } from 'src/components/Loading/Loading';
+import useAuth from 'src/hooks/useAuth';
+import useLocation from 'src/hooks/useLocation';
 import { BasicHeader } from 'src/pages/@components/BasicHeader/BasicHeader';
 import { apiClient } from 'src/utils/apiClient';
 import { formatTime } from 'src/utils/format';
@@ -60,35 +59,14 @@ const LocationMarker: FC<LocationMarkerProps> = ({ coordinates }) => {
 };
 const Map: FC = () => {
   // console.log('my', myIconURL);
-  const [user, setUser] = useAtom(userAtom);
-  const [coordinates, setCoordinates] = useAtom(coordinatesAtom);
   const [posts, setPosts] = useState<PostModel[] | null>(null);
   const [postContent, setPostContent] = useState('');
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-  const router = useRouter();
+  const user = useAuth();
+  const coordinates = useLocation();
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser !== null) {
-      const parsedUser = JSON.parse(savedUser);
-      setUser(parsedUser);
-    } else {
-      router.push('/login');
-    }
-  }, [setUser, router]);
-
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && navigator.geolocation !== null) {
-      navigator.geolocation.watchPosition((posithon) => {
-        setCoordinates({
-          latitude: posithon.coords.latitude,
-          longitude: posithon.coords.longitude,
-        });
-      });
-    }
-  }, [setCoordinates]);
   const handleButtonClick = () => {
     setIsPopupVisible(true);
   };
