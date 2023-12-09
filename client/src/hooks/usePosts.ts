@@ -3,27 +3,32 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from 'src/utils/apiClient';
 import type { GeolocationCoordinates } from 'src/utils/interface';
 import { returnNull } from 'src/utils/returnNull';
-type updateLikeStatusFunction = (posts: PostModel[]) => Promise<void>;
+type UpdateLikesStatusFunction = (data: PostModel[]) => Promise<void>;
 const usePosts = (
   coordinates: GeolocationCoordinates,
-  updateLikeStatus: updateLikeStatusFunction
+  isFirstLoad: boolean,
+  updateLikesStatus: UpdateLikesStatusFunction,
+  setIsFirstLoad: (value: boolean) => void
 ) => {
   const [posts, setPosts] = useState<PostModel[] | null>(null);
-
-  const fetchAndUpdatePosts = useCallback(async () => {
+  const fetchPosts = useCallback(async () => {
     if (coordinates.latitude === null || coordinates.longitude === null) return;
     const data = await apiClient.posts
       .$get({ query: { latitude: coordinates.latitude, longitude: coordinates.longitude } })
       .catch(returnNull);
     setPosts(data);
-    if (data) await updateLikeStatus(data);
-  }, [coordinates, updateLikeStatus]);
+
+    if (isFirstLoad && data) {
+      await updateLikesStatus(data);
+      setIsFirstLoad(false);
+    }
+  }, [coordinates, isFirstLoad, updateLikesStatus, setIsFirstLoad]);
 
   useEffect(() => {
-    fetchAndUpdatePosts();
-  }, [fetchAndUpdatePosts]);
+    fetchPosts();
+  }, [fetchPosts]);
 
-  return [posts, fetchAndUpdatePosts];
+  return posts;
 };
 
 export default usePosts;
