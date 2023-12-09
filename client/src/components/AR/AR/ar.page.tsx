@@ -1,10 +1,9 @@
 import type { PostModel } from 'commonTypesWithClient/models';
-import { useAtom } from 'jotai';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
-import { coordinatesAtom, userAtom } from 'src/atoms/user';
 import { Loading } from 'src/components/Loading/Loading';
+import useAuth from 'src/hooks/useAuth';
+import useLocation from 'src/hooks/useLocation';
 import { apiClient } from 'src/utils/apiClient';
 import { xValue, yValue, zValue } from 'src/utils/calculate';
 import { formatContent, formatTime } from 'src/utils/format';
@@ -12,22 +11,12 @@ import { returnNull } from 'src/utils/returnNull';
 import styles from './ar.module.css';
 
 const ARComponent = () => {
-  const [user, setUser] = useAtom(userAtom);
-  const [coordinates, setCoordinates] = useAtom(coordinatesAtom);
   const [posts, setPosts] = useState<PostModel[] | null>(null);
   const [likesStatus, setLikesStatus] = useState<{ [key: string]: boolean }>({});
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const router = useRouter();
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser !== null) {
-      const parsedUser = JSON.parse(savedUser);
-      setUser(parsedUser);
-    } else {
-      router.push('/login');
-    }
-  }, [setUser, router]);
+  const user = useAuth();
+  const coordinates = useLocation();
 
   const getPosts = useCallback(async () => {
     if (coordinates.latitude === null || coordinates.longitude === null) return;
@@ -36,17 +25,6 @@ const ARComponent = () => {
     const data = await apiClient.posts.$get({ query: { latitude, longitude } }).catch(returnNull);
     setPosts(data);
   }, [coordinates.latitude, coordinates.longitude]);
-
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && navigator.geolocation !== null) {
-      navigator.geolocation.watchPosition((posithon) => {
-        setCoordinates({
-          latitude: posithon.coords.latitude,
-          longitude: posithon.coords.longitude,
-        });
-      });
-    }
-  }, [setCoordinates]);
 
   const isLikeChecker = useCallback(
     async (postId: string) => {
@@ -149,17 +127,6 @@ const ARComponent = () => {
         },
       });
     }
-
-    // if (typeof AFRAME.components['log'] === 'undefined') {
-    //   AFRAME.registerComponent('log', {
-    //     schema: { type: 'string' },
-
-    //     init() {
-    //       const stringToLog = this.data;
-    //       // console.log('log内容', stringToLog);
-    //     },
-    //   });
-    // }
   }, [deletePostContent, handleLike]);
 
   if (!user) {
