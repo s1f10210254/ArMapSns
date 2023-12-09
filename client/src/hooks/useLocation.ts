@@ -7,13 +7,13 @@ const useLocation = () => {
 
   useEffect(() => {
     if (typeof navigator !== 'undefined' && navigator.geolocation !== null) {
-      const watcher = navigator.geolocation.watchPosition((position) => {
+      navigator.geolocation.watchPosition((position) => {
         setCoordinates({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         });
       });
-      return () => navigator.geolocation.clearWatch(watcher);
+      // return () => navigator.geolocation.clearWatch(watcher);
     }
   });
   return coordinates;
