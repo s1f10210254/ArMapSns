@@ -1,4 +1,4 @@
-import { S3_BUCKET } from '$/service/envValues';
+import { S3_BUCKET, S3_ENDPOINT } from '$/service/envValues';
 import { s3Client } from '$/service/s3Client';
 import { ListObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { defineController } from './$relay';
@@ -11,7 +11,7 @@ export default defineController(() => ({
       const photos =
         response.Contents?.map((content) => ({
           title: content.Key ?? '未定義のタイトル', // `undefined` を許容しない
-          url: `https://${process.env.MINIO_ENDPOINT}/${process.env.S3_BUCKET}/${content.Key}`,
+          url: `${S3_ENDPOINT}/${S3_BUCKET}/${content.Key}`,
         })) || [];
 
       return { status: 200, body: { photos } };
@@ -29,14 +29,14 @@ export default defineController(() => ({
 
       await s3Client.send(
         new PutObjectCommand({
-          Bucket: 'app',
+          Bucket: S3_BUCKET,
           Key: key,
           Body: fileBuffer,
           ContentType: file.mimetype,
         })
       );
 
-      const url = `https://${process.env.MINIO_ENDPOINT}/${process.env.S3_BUCKET}/${key}`;
+      const url = `${S3_ENDPOINT}/${S3_BUCKET}/${key}`;
       return { status: 201, body: { message: 'アップロード成功', url } };
     } catch (error) {
       console.error(error);

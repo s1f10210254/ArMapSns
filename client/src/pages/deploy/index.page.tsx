@@ -29,6 +29,9 @@ const Home = () => {
         body,
       });
       alert(`アップロード成功 ${response.url}`);
+      setTitle('');
+      const res = await apiClient.minio.$get();
+      setPhotos(res.photos);
     } catch (error) {
       console.error(error);
       alert('アップロードに失敗しました。');
@@ -83,6 +86,7 @@ const Home = () => {
         {photos.map((photo) => (
           <div key={photo.title}>
             <img src={photo.url} alt={photo.title} />
+            <p>{photo.url}</p>
             <p>{photo.title}</p>
             <p>{photo.description}</p>
           </div>
