@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { apiClient } from 'src/utils/apiClient';
 
 const Home = () => {
@@ -29,11 +29,34 @@ const Home = () => {
         body,
       });
       alert(`アップロード成功 ${response.url}`);
+      setTitle('');
+      const res = await apiClient.minio.$get();
+      setPhotos(res.photos);
     } catch (error) {
       console.error(error);
       alert('アップロードに失敗しました。');
     }
   };
+  interface Photo {
+    title: string;
+    url: string;
+    description?: string;
+  }
+  const [photos, setPhotos] = useState<Photo[]>([]);
+
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      try {
+        const response = await apiClient.minio.$get();
+        setPhotos(response.photos);
+      } catch (error) {
+        console.error(error);
+        // エラーハンドリング
+      }
+    };
+
+    fetchPhotos();
+  }, []);
 
   return (
     <div>
@@ -59,6 +82,16 @@ const Home = () => {
         <br />
         <button type="submit">アップロード</button>
       </form>
+      <div>
+        {photos.map((photo) => (
+          <div key={photo.title}>
+            <img src={photo.url} alt={photo.title} />
+            <p>{photo.url}</p>
+            <p>{photo.title}</p>
+            <p>{photo.description}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
