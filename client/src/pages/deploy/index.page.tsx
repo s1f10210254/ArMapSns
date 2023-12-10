@@ -1,22 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from 'src/utils/apiClient';
+import { judgementS3 } from 'src/utils/s3';
 
 const Home = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const getPhotos = async () => {
+    if (judgementS3() === false) {
+      alert('現在対応していません');
+      return;
+    }
+    try {
+      const response = await apiClient.minio.$get();
+      setPhotos(response.photos);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    if (judgementS3() === false) {
+      alert('現在対応していません');
+      return;
+    }
     event.preventDefault();
     if (!file) {
       alert('写真を選択してください。');
       return;
     }
-
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('file', file);
 
     const body = {
       title,
@@ -30,8 +42,8 @@ const Home = () => {
       });
       alert(`アップロード成功 ${response.url}`);
       setTitle('');
-      const res = await apiClient.minio.$get();
-      setPhotos(res.photos);
+      setDescription('');
+      await getPhotos();
     } catch (error) {
       console.error(error);
       alert('アップロードに失敗しました。');
@@ -45,17 +57,7 @@ const Home = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
 
   useEffect(() => {
-    const fetchPhotos = async () => {
-      try {
-        const response = await apiClient.minio.$get();
-        setPhotos(response.photos);
-      } catch (error) {
-        console.error(error);
-        // エラーハンドリング
-      }
-    };
-
-    fetchPhotos();
+    getPhotos();
   }, []);
 
   return (
@@ -85,9 +87,10 @@ const Home = () => {
       <div>
         {photos.map((photo) => (
           <div key={photo.title}>
-            <img src={photo.url} alt={photo.title} />
-            <p>{photo.url}</p>
             <p>{photo.title}</p>
+            <img src={photo.url} alt={photo.title} style={{ width: '300px', height: 'auto' }} />
+            {/* <p>{photo.url}</p> */}
+
             <p>{photo.description}</p>
           </div>
         ))}

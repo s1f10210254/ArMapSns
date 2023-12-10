@@ -12,6 +12,7 @@ export type Methods = DefineMethods<{
       longitude: number;
       userID: string;
       likeCount: number;
+      photoURL?: string;
     }[];
   };
   post: {

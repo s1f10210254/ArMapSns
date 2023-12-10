@@ -16,6 +16,7 @@ export type PostModel = {
   longitude: number;
   userID: string;
   likeCount: number;
+  photoURL?: string;
 };
 
 export const taskParser = z.object({
