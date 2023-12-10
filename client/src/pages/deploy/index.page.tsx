@@ -6,6 +6,18 @@ const Home = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const getPhotos = async () => {
+    if (judgementS3() === false) {
+      alert('現在対応していません');
+      return;
+    }
+    try {
+      const response = await apiClient.minio.$get();
+      setPhotos(response.photos);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     if (judgementS3() === false) {
@@ -30,8 +42,8 @@ const Home = () => {
       });
       alert(`アップロード成功 ${response.url}`);
       setTitle('');
-      const res = await apiClient.minio.$get();
-      setPhotos(res.photos);
+      setDescription('');
+      await getPhotos();
     } catch (error) {
       console.error(error);
       alert('アップロードに失敗しました。');
@@ -45,21 +57,7 @@ const Home = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
 
   useEffect(() => {
-    const fetchPhotos = async () => {
-      if (judgementS3() === false) {
-        alert('現在対応していません');
-        return;
-      }
-      try {
-        const response = await apiClient.minio.$get();
-        setPhotos(response.photos);
-      } catch (error) {
-        console.error(error);
-        // エラーハンドリング
-      }
-    };
-
-    fetchPhotos();
+    getPhotos();
   }, []);
 
   return (
