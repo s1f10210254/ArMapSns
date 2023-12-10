@@ -14,7 +14,7 @@ import myIconURL from 'public/images/me.png';
 import otherIconURL from 'public/images/other.png';
 import pingIconURL from 'public/images/pinn.png';
 import type { FC } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { Loading } from 'src/components/Loading/Loading';
 import useAuth from 'src/hooks/useAuth';
@@ -24,6 +24,7 @@ import { apiClient } from 'src/utils/apiClient';
 import { formatTime } from 'src/utils/format';
 import type { GeolocationCoordinates } from 'src/utils/interface';
 import { returnNull } from 'src/utils/returnNull';
+import { judgementS3 } from 'src/utils/s3';
 import styles from './map.module.css';
 
 L.Icon.Default.mergeOptions({
@@ -63,6 +64,7 @@ const Map: FC = () => {
   const [postContent, setPostContent] = useState('');
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [file, setFile] = useState<File | null>(null);
 
   const user = useAuth();
   const coordinates = useLocation();
@@ -146,6 +148,18 @@ const Map: FC = () => {
       setIsFirstLoad(false); // 最初のロードが完了したらフラグを更新
     }
   }, [coordinates.latitude, coordinates.longitude, isFirstLoad]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    if (judgementS3() === false) {
+      alert('現在対応していません');
+      return;
+    }
+    event.preventDefault();
+    if (!file) {
+      alert('写真を選択してください');
+      return;
+    }
+  };
 
   if (!user) {
     return (
@@ -316,6 +330,15 @@ const Map: FC = () => {
                 },
               }}
             />
+            <form onSubmit={handleSubmit}>
+              <label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+                />
+              </label>
+            </form>
             <div
               style={{
                 alignSelf: 'flex-end',
