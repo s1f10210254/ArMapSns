@@ -77,9 +77,9 @@ const Map: FC = () => {
   //24時間以内かつ半径10km以内のものをget! useEffectで呼び出される、、
   const getPosts = useCallback(async () => {
     if (coordinates.latitude === null || coordinates.longitude === null) return;
-    const latitude = coordinates.latitude;
-    const longitude = coordinates.longitude;
-    const data = await apiClient.posts.$get({ query: { latitude, longitude } }).catch(returnNull);
+    const data = await apiClient.posts
+      .$get({ query: { latitude: coordinates.latitude, longitude: coordinates.longitude } })
+      .catch(returnNull);
     setPosts(data);
     // console.log('getPosts');
   }, [coordinates.latitude, coordinates.longitude]);
