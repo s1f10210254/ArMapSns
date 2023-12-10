@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from 'src/utils/apiClient';
+import { judgementS3 } from 'src/utils/s3';
 
 const Home = () => {
   const [title, setTitle] = useState('');
@@ -7,16 +8,15 @@ const Home = () => {
   const [file, setFile] = useState<File | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    if (judgementS3() === false) {
+      alert('現在対応していません');
+      return;
+    }
     event.preventDefault();
     if (!file) {
       alert('写真を選択してください。');
       return;
     }
-
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('file', file);
 
     const body = {
       title,
@@ -46,6 +46,10 @@ const Home = () => {
 
   useEffect(() => {
     const fetchPhotos = async () => {
+      if (judgementS3() === false) {
+        alert('現在対応していません');
+        return;
+      }
       try {
         const response = await apiClient.minio.$get();
         setPhotos(response.photos);
@@ -85,9 +89,10 @@ const Home = () => {
       <div>
         {photos.map((photo) => (
           <div key={photo.title}>
-            <img src={photo.url} alt={photo.title} />
-            <p>{photo.url}</p>
             <p>{photo.title}</p>
+            <img src={photo.url} alt={photo.title} style={{ width: '300px', height: 'auto' }} />
+            {/* <p>{photo.url}</p> */}
+
             <p>{photo.description}</p>
           </div>
         ))}
