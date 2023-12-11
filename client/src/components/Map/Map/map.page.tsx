@@ -24,6 +24,7 @@ import { apiClient } from 'src/utils/apiClient';
 import { formatTime } from 'src/utils/format';
 import type { GeolocationCoordinates } from 'src/utils/interface';
 import { returnNull } from 'src/utils/returnNull';
+import { judgementS3 } from 'src/utils/s3';
 import styles from './map.module.css';
 
 L.Icon.Default.mergeOptions({
@@ -182,6 +183,7 @@ const Map: FC = () => {
           };
       if (file) {
         // formData.append('file', file);
+        if (judgementS3() === false) return;
         await apiClient.test.$post({ body });
       } else {
         const postUserName = 'bbb';
