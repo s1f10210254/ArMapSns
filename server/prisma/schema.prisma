@@ -39,7 +39,7 @@ model Post {
   user      User     @relation(fields: [userID], references: [id])
   likeCount Int      @default(0)
   likes     Like[]
-  pthotoURL String?
+  photoURL  String?
 }
 
 model Like {

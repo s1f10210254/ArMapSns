@@ -53,7 +53,7 @@ export const postPostAndPhoto = async (
   const jstOffset = 9 * 60; // 日本はUTC+9
   const now = new Date();
   const jstNow = new Date(now.getTime() + jstOffset * 60 * 1000);
-  console.log('type', typeof postlatitude);
+
   try {
     const post = await prismaClient.post.create({
       data: {
@@ -65,7 +65,7 @@ export const postPostAndPhoto = async (
         longitude: postlongitude,
         userID,
         likeCount: 0,
-        pthotoURL: photoUrl,
+        photoURL: photoUrl,
       },
     });
     // console.log('post', post);
