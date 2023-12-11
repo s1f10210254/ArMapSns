@@ -30,4 +30,20 @@ export const photoRepository = {
     const url = `${S3_ENDPOINT}/${S3_BUCKET}/${key}`;
     return url;
   },
+
+  uploadPOSTPhoto: async (username: string, file: Buffer, mimetype: string) => {
+    const uniqueKey = `${Date.now()}-${username}`;
+    const key = `Posts/${uniqueKey}`;
+
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: key,
+        Body: file,
+        ContentType: mimetype,
+      })
+    );
+    const url = `${S3_ENDPOINT}/${S3_BUCKET}/${key}`;
+    return url;
+  },
 };

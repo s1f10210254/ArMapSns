@@ -19,7 +19,6 @@ export const postPost = async (
   postlongitude: number,
   userID: string
 ) => {
-  // console.log('userID', userID);
   const jstOffset = 9 * 60; // 日本はUTC+9
   const now = new Date();
   const jstNow = new Date(now.getTime() + jstOffset * 60 * 1000);
@@ -34,6 +33,39 @@ export const postPost = async (
         longitude: postlongitude,
         userID,
         likeCount: 0,
+      },
+    });
+    // console.log('post', post);
+    return post;
+  } catch (error) {
+    console.error('Error creating post:', error);
+  }
+};
+
+export const postPostAndPhoto = async (
+  postUserName: string,
+  postcontent: string,
+  postlatitude: number,
+  postlongitude: number,
+  userID: string,
+  photoUrl: string
+) => {
+  const jstOffset = 9 * 60; // 日本はUTC+9
+  const now = new Date();
+  const jstNow = new Date(now.getTime() + jstOffset * 60 * 1000);
+
+  try {
+    const post = await prismaClient.post.create({
+      data: {
+        id: randomUUID(),
+        userName: postUserName,
+        postTime: jstNow,
+        content: postcontent,
+        latitude: postlatitude,
+        longitude: postlongitude,
+        userID,
+        likeCount: 0,
+        photoURL: photoUrl,
       },
     });
     // console.log('post', post);
