@@ -24,7 +24,6 @@ import { apiClient } from 'src/utils/apiClient';
 import { formatTime } from 'src/utils/format';
 import type { GeolocationCoordinates } from 'src/utils/interface';
 import { returnNull } from 'src/utils/returnNull';
-import { judgementS3 } from 'src/utils/s3';
 import styles from './map.module.css';
 
 L.Icon.Default.mergeOptions({
@@ -86,21 +85,21 @@ const Map: FC = () => {
     // console.log('getPosts');
   }, [coordinates.latitude, coordinates.longitude]);
 
-  const postPostContent = async () => {
-    if (user?.id === undefined || postContent === '') return;
-    if (coordinates.latitude === null || coordinates.longitude === null) return;
+  // const postPostContent = async () => {
+  //   if (user?.id === undefined || postContent === '') return;
+  //   if (coordinates.latitude === null || coordinates.longitude === null) return;
 
-    // const postUserName = user.displayName;
-    const postUserName = 'aaa';
-    const latitude = coordinates.latitude;
-    const longitude = coordinates.longitude;
-    await apiClient.myPost.$post({
-      body: { username: postUserName, content: postContent, latitude, longitude, userID: user.id },
-    });
-    setPostContent('');
-    handleClosePopup();
-    getPosts();
-  };
+  //   // const postUserName = user.displayName;
+  //   const postUserName = 'bbb';
+  //   const latitude = coordinates.latitude;
+  //   const longitude = coordinates.longitude;
+  //   await apiClient.myPost.$post({
+  //     body: { username: postUserName, content: postContent, latitude, longitude, userID: user.id },
+  //   });
+  //   setPostContent('');
+  //   handleClosePopup();
+  //   getPosts();
+  // };
 
   //自分の投稿をdeleteする関数
   const deletePostContent = async (postID: string) => {
@@ -150,14 +149,61 @@ const Map: FC = () => {
   }, [coordinates.latitude, coordinates.longitude, isFirstLoad]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    if (judgementS3() === false) {
-      alert('現在対応していません');
-      return;
-    }
     event.preventDefault();
-    if (!file) {
-      alert('写真を選択してください');
-      return;
+    if (user?.id === undefined || postContent === '') return;
+    if (coordinates.latitude === null || coordinates.longitude === null) return;
+
+    try {
+      // const formData = new FormData();
+      // formData.append('username', 'bbb');
+      // formData.append('content', postContent);
+      // formData.append('latitude', coordinates.latitude.toString());
+      // formData.append('longitude', coordinates.longitude.toString());
+      // formData.append('userID', user.id);
+      const postUserName = 'bbb';
+      const latitude = coordinates.latitude.toString();
+      const longitude = coordinates.longitude.toString();
+      const body = file
+        ? {
+            username: postUserName,
+            content: postContent,
+            latitude,
+            longitude,
+            userID: user.id,
+            file: file as Blob, // fileがnullでなければBlob型として扱う
+          }
+        : {
+            username: postUserName,
+            content: postContent,
+            latitude,
+            longitude,
+            userID: user.id,
+            // fileがnullの場合はfileプロパティを含めない
+          };
+      if (file) {
+        // formData.append('file', file);
+        await apiClient.test.$post({ body });
+      } else {
+        const postUserName = 'bbb';
+        const latitude = coordinates.latitude;
+        const longitude = coordinates.longitude;
+        const body = {
+          username: postUserName,
+          content: postContent,
+          latitude,
+          longitude,
+          userID: user.id,
+        };
+        await apiClient.myPost.$post({ body });
+      }
+
+      // フォームのリセット
+      setPostContent('');
+      setFile(null);
+      handleClosePopup();
+      getPosts();
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -303,68 +349,74 @@ const Map: FC = () => {
       {isPopupVisible && (
         <div className={styles.popup}>
           <div className={styles.popupContent}>
-            <div
-              style={{
-                padding: '10px 0',
-                textAlign: 'left',
-                marginBottom: '30px',
-                fontSize: '14px',
-                color: 'black',
-              }}
-            >
-              今、あなたの周りで何が起こってる？
-            </div>
-            <TextField
-              label="なにがおきてる？"
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              multiline
-              rows={5}
-              variant="outlined"
-              style={{ marginBottom: 'auto' }}
-              InputProps={{
-                sx: {
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#90caf9',
-                  },
-                },
-              }}
-            />
             <form onSubmit={handleSubmit}>
-              <label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-                />
-              </label>
+              <div
+                style={{
+                  padding: '10px 0',
+                  textAlign: 'left',
+                  marginBottom: '30px',
+                  fontSize: '14px',
+                  color: 'black',
+                }}
+              >
+                今、あなたの周りで何が起こってる？
+              </div>
+              <TextField
+                label="なにがおきてる？"
+                value={postContent}
+                onChange={(e) => setPostContent(e.target.value)}
+                multiline
+                rows={5}
+                variant="outlined"
+                style={{ marginBottom: 'auto' }}
+                InputProps={{
+                  sx: {
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#90caf9',
+                    },
+                  },
+                }}
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+              />
+
+              <div
+                style={{
+                  alignSelf: 'flex-end',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                }}
+              >
+                <Button
+                  variant="contained"
+                  startIcon={<KeyboardReturnIcon />}
+                  onClick={handleClosePopup}
+                  sx={{ backgroundColor: '#FFCC80' }}
+                >
+                  戻る
+                </Button>
+                {/* <Button
+                  variant="contained"
+                  onClick={postPostContent}
+                  disabled={!postContent.trim()}
+                  sx={{ backgroundColor: '#90caf9' }}
+                  endIcon={<SendIcon />}
+                > */}
+                <Button
+                  variant="contained"
+                  type="submit"
+                  disabled={!postContent.trim()}
+                  sx={{ backgroundColor: '#90caf9' }}
+                  endIcon={<SendIcon />}
+                >
+                  POST
+                </Button>
+              </div>
             </form>
-            <div
-              style={{
-                alignSelf: 'flex-end',
-                display: 'flex',
-                justifyContent: 'space-between',
-                width: '100%',
-              }}
-            >
-              <Button
-                variant="contained"
-                startIcon={<KeyboardReturnIcon />}
-                onClick={handleClosePopup}
-                sx={{ backgroundColor: '#FFCC80' }}
-              >
-                戻る
-              </Button>
-              <Button
-                variant="contained"
-                onClick={postPostContent}
-                disabled={!postContent.trim()}
-                sx={{ backgroundColor: '#90caf9' }}
-                endIcon={<SendIcon />}
-              >
-                POST
-              </Button>
-            </div>
           </div>
         </div>
       )}
