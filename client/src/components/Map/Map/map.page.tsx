@@ -59,7 +59,6 @@ const LocationMarker: FC<LocationMarkerProps> = ({ coordinates }) => {
   return null; // このコンポーネントはビジュアルをレンダリングしません。
 };
 const Map: FC = () => {
-  // console.log('my', myIconURL);
   const [posts, setPosts] = useState<PostModel[] | null>(null);
   const [postContent, setPostContent] = useState('');
   const [isPopupVisible, setIsPopupVisible] = useState(false);
@@ -82,6 +81,7 @@ const Map: FC = () => {
     const data = await apiClient.posts
       .$get({ query: { latitude: coordinates.latitude, longitude: coordinates.longitude } })
       .catch(returnNull);
+    // console.log('dataaaa', data);
     setPosts(data);
     // console.log('getPosts');
   }, [coordinates.latitude, coordinates.longitude]);
@@ -155,12 +155,6 @@ const Map: FC = () => {
     if (coordinates.latitude === null || coordinates.longitude === null) return;
 
     try {
-      // const formData = new FormData();
-      // formData.append('username', 'bbb');
-      // formData.append('content', postContent);
-      // formData.append('latitude', coordinates.latitude.toString());
-      // formData.append('longitude', coordinates.longitude.toString());
-      // formData.append('userID', user.id);
       const postUserName = 'bbb';
       const latitude = coordinates.latitude.toString();
       const longitude = coordinates.longitude.toString();
@@ -182,9 +176,11 @@ const Map: FC = () => {
             // fileがnullの場合はfileプロパティを含めない
           };
       if (file) {
-        // formData.append('file', file);
-        if (judgementS3() === false) return;
-        await apiClient.test.$post({ body });
+        if (judgementS3() === false) {
+          alert('現在対応していません');
+          return;
+        }
+        await apiClient.test.$post({ body }).catch(returnNull);
       } else {
         const postUserName = 'bbb';
         const latitude = coordinates.latitude;
@@ -196,7 +192,7 @@ const Map: FC = () => {
           longitude,
           userID: user.id,
         };
-        await apiClient.myPost.$post({ body });
+        await apiClient.myPost.$post({ body }).catch(returnNull);
       }
 
       // フォームのリセット
@@ -263,6 +259,23 @@ const Map: FC = () => {
                         }}
                       >
                         {post.content}
+                      </div>
+
+                      <div
+                        style={{
+                          // fontSize: '20px',
+                          // overflow: 'auto',
+                          paddingTop: '50px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {/* {post.photoURL !== undefined && ( */}
+                        <img
+                          src={post.photoURL}
+                          alt={post.photoURL}
+                          style={{ width: '100px', height: 'auto' }}
+                        />
+                        {/*  )}*/}
                       </div>
 
                       {/* いいねボタン*/}
