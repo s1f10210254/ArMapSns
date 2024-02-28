@@ -1,3 +1,5 @@
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { Button, IconButton, TextField, Typography } from '@mui/material';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useAtom } from 'jotai';
@@ -9,9 +11,6 @@ import { createAuth } from 'src/utils/firebase';
 import { returnNull } from 'src/utils/returnNull';
 import { useLoading } from '../@hooks/useLoading';
 import styles from './index.module.css';
-
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 const Register = () => {
   const [, setUser] = useAtom(userAtom);
