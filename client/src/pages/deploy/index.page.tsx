@@ -8,7 +8,7 @@ const Home = () => {
   const [file, setFile] = useState<File | null>(null);
   const getPhotos = async () => {
     if (judgementS3() === false) {
-      alert('現在対応していません');
+      alert('現在写真投稿は対応していません');
       return;
     }
     try {
@@ -21,7 +21,7 @@ const Home = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     if (judgementS3() === false) {
-      alert('現在対応していません');
+      alert('現在写真投稿は対応していません');
       return;
     }
     event.preventDefault();
